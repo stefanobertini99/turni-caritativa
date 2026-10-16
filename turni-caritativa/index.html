@@ -81,9 +81,9 @@
     <button class="btn" id="succ" type="button" aria-label="Mese successivo">›</button>
   </div>
   <div class="legenda">
-    <span style="--c:var(--bad)">Nessuno</span>
-    <span style="--c:var(--warn)">Mancano persone</span>
-    <span style="--c:var(--ok)">Completo</span>
+    <span style="--c:var(--bad)">Ancora nessuno</span>
+    <span style="--c:var(--ok)">C'è ancora posto</span>
+    <span style="--c:var(--warn)">Completo</span>
   </div>
   <div id="stato"></div>
   <div class="intestazione">
@@ -114,8 +114,7 @@
 // ================= CONFIGURAZIONE: modifica qui giorni e turni =================
 const GIORNI_APERTI = [6]; // solo sabato
 const TURNI = [
-  { id: "mattina",    nome: "Mattina",    orario: "9:00–12:00",  posti: 3 },
-  { id: "pomeriggio", nome: "Pomeriggio", orario: "15:00–18:00", posti: 3 },
+  { id: "mattina", nome: "Mattina", orario: "9:45–12:00", minimo: 1, posti: 8 },
 ];
 // ==============================================================================
 
@@ -216,14 +215,14 @@ function disegna() {
       for (const t of TURNI) {
         const nomi = dati[`${iso}|${t.id}`] || [];
         const mio = !!nome && nomi.some(n => stesso(n, nome));
-        const colore = nomi.length === 0 ? "var(--bad)" : nomi.length < t.posti ? "var(--warn)" : "var(--ok)";
+        const colore = nomi.length < (t.minimo || 1) ? "var(--bad)" : nomi.length < t.posti ? "var(--ok)" : "var(--warn)";
         const b = document.createElement("button");
         b.type = "button";
         b.className = "turno" + (mio ? " mio" : "");
         b.style.setProperty("--c", colore);
         b.disabled = passato;
         b.innerHTML =
-          `<span class="riga"><span>${esc(t.nome)}</span><span>${nomi.length}/${t.posti}</span></span>` +
+          `<span class="riga"><span>${esc(t.nome)}</span><span>${nomi.length >= t.posti ? "Completo" : `${nomi.length}/${t.posti}`}</span></span>` +
           `<span class="orario">${esc(t.orario)}</span>` +
           `<span class="nomi">${nomi.length ? nomi.map(esc).join(", ") : "—"}</span>`;
         b.onclick = () => cambia(iso, t);
