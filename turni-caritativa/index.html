@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turni volontari · Caritativa Martinengo</title>
+<style>
+  :root{
+    --bg:#f6f3ee; --card:#fff; --ink:#2a2a2a; --muted:#77736c; --line:#e3ded5;
+    --accent:#a8432c; --ok:#2e8b57; --warn:#e0a020; --bad:#cc4a3c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:var(--accent);color:#fff;padding:18px 20px}
+  .top{max-width:1100px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{margin:0;font-size:1.25rem}
+  header p{margin:2px 0 0;font-size:.85rem;opacity:.85}
+  #utente{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;padding:7px 12px;border-radius:20px;font:inherit;font-size:.9rem;cursor:pointer}
+  main{max-width:1100px;margin:0 auto;padding:16px}
+  .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .nav h2{margin:0;font-size:1.3rem;text-transform:capitalize}
+  .btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:8px;font:inherit;cursor:pointer}
+  .btn:hover{background:#f0ece4}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .legenda{display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--muted);margin-bottom:10px}
+  .legenda span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;background:var(--c);vertical-align:-1px}
+  #stato{min-height:1.4em;font-size:.9rem;margin-bottom:8px;color:var(--muted)}
+  #stato.errore{color:var(--bad);font-weight:600}
+  .intestazione,.griglia{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+  .intestazione div{text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;padding:4px 0}
+  .giorno{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:6px;min-height:100px;display:flex;flex-direction:column;gap:4px}
+  .giorno.vuoto,.giorno.chiuso{background:none}
+  .giorno.vuoto{border:none}
+  .giorno.passato{opacity:.5}
+  .giorno.oggi{border:2px solid var(--accent)}
+  .data{font-weight:700;font-size:.85rem}
+  .data .gs{display:none}
+  .turno{display:block;width:100%;text-align:left;font:inherit;font-size:.72rem;color:var(--ink);background:#faf8f4;border:1px solid var(--line);border-left:4px solid var(--c);border-radius:6px;padding:4px 6px;cursor:pointer}
+  .turno:hover:not(:disabled){background:#f1ece2}
+  .turno:disabled{cursor:default}
+  .turno.mio{background:#fbe6df;border-color:var(--accent);border-left-color:var(--c)}
+  .turno .riga{display:flex;justify-content:space-between;gap:4px;font-weight:700}
+  .turno .orario{color:var(--muted);font-size:.9em}
+  .turno .nomi{display:block;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+  .turno.mio .nomi{color:var(--ink)}
+  .pannello{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-top:16px}
+  .pannello h3{margin:0 0 8px;font-size:1rem}
+  .pannello ul{margin:0 0 12px;padding-left:20px}
+  .pannello li{margin:3px 0;text-transform:capitalize}
+  dialog{border:none;border-radius:12px;padding:20px;max-width:360px;width:90%}
+  dialog::backdrop{background:rgba(0,0,0,.4)}
+  dialog h3{margin-top:0}
+  dialog input{width:100%;padding:10px;font:inherit;border:1px solid var(--line);border-radius:8px;margin:8px 0 4px}
+  dialog small{color:var(--muted)}
+  dialog .azioni{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+  @media (max-width:700px){
+    .intestazione{display:none}
+    .griglia{grid-template-columns:1fr}
+    .giorno.vuoto,.giorno.chiuso{display:none}
+    .giorno{min-height:0}
+    .data .gs{display:inline;text-transform:capitalize}
+    .turno{font-size:.9rem;padding:8px 10px}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1>Turni volontari</h1>
+      <p>Caritativa Martinengo</p>
+    </div>
+    <button id="utente" type="button"></button>
+  </div>
+</header>
+
+<main>
+  <div class="nav">
+    <button class="btn" id="prec" type="button" aria-label="Mese precedente">‹</button>
+    <h2 id="titoloMese"></h2>
+    <button class="btn" id="succ" type="button" aria-label="Mese successivo">›</button>
+  </div>
+  <div class="legenda">
+    <span style="--c:var(--bad)">Nessuno</span>
+    <span style="--c:var(--warn)">Mancano persone</span>
+    <span style="--c:var(--ok)">Completo</span>
+  </div>
+  <div id="stato"></div>
+  <div class="intestazione">
+    <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div><div>Sab</div><div>Dom</div>
+  </div>
+  <div class="griglia" id="griglia"></div>
+
+  <section class="pannello">
+    <h3>I miei turni del mese</h3>
+    <ul id="miei"></ul>
+    <button class="btn primary" id="copia" type="button">📋 Copia turni scoperti per WhatsApp</button>
+  </section>
+</main>
+
+<dialog id="dlgNome">
+  <form method="dialog">
+    <h3>Come ti chiami?</h3>
+    <input id="inpNome" maxlength="40" placeholder="Es. Anna R." autocomplete="name">
+    <small>Usa sempre lo stesso nome, così i tuoi turni vengono riconosciuti anche da un altro telefono.</small>
+    <div class="azioni">
+      <button class="btn" value="annulla">Annulla</button>
+      <button class="btn primary" value="ok">Conferma</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+// ================= CONFIGURAZIONE: modifica qui giorni e turni =================
+const GIORNI_APERTI = [1, 2, 3, 4, 5, 6]; // 0=domenica, 1=lunedì ... 6=sabato
+const TURNI = [
+  { id: "mattina",    nome: "Mattina",    orario: "9:00–12:00",  posti: 3 },
+  { id: "pomeriggio", nome: "Pomeriggio", orario: "15:00–18:00", posti: 3 },
+];
+// ==============================================================================
+
+const API = "/api/turni";
+const GIORNI = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const stesso = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+let nome = localStorage.getItem("nomeVolontario") || "";
+const ora = new Date();
+const oggiIso = `${ora.getFullYear()}-${pad(ora.getMonth() + 1)}-${pad(ora.getDate())}`;
+let anno = ora.getFullYear(), mese = ora.getMonth();
+let dati = {}, richiesta = 0, timerStato;
+
+const chiaveMese = () => `${anno}-${pad(mese + 1)}`;
+const isoDi = d => `${chiaveMese()}-${pad(d)}`;
+const formatta = iso => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("it-IT", { weekday: "short", day: "numeric", month: "short" });
+};
+
+function stato(msg, errore = false, temporaneo = false) {
+  clearTimeout(timerStato);
+  $("stato").textContent = msg;
+  $("stato").className = errore ? "errore" : "";
+  if (temporaneo) timerStato = setTimeout(() => stato(""), 4000);
+}
+
+function aggiornaUtente() {
+  $("utente").textContent = nome ? `👤 ${nome} · cambia` : "👤 Inserisci il tuo nome";
+}
+
+function chiediNome() {
+  return new Promise(resolve => {
+    const dlg = $("dlgNome"), inp = $("inpNome");
+    inp.value = nome;
+    dlg.returnValue = "";
+    dlg.showModal();
+    inp.focus();
+    inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); dlg.close("ok"); } };
+    dlg.onclose = () => {
+      const v = inp.value.trim().replace(/\s+/g, " ");
+      if (dlg.returnValue === "ok" && v) {
+        nome = v;
+        localStorage.setItem("nomeVolontario", nome);
+        aggiornaUtente();
+        disegna();
+        resolve(true);
+      } else resolve(false);
+    };
+  });
+}
+
+async function carica() {
+  const mia = ++richiesta;
+  stato("Caricamento…");
+  try {
+    const r = await fetch(`${API}?mese=${chiaveMese()}`);
+    if (!r.ok) throw new Error(r.status);
+    const json = await r.json();
+    if (mia !== richiesta) return;
+    dati = json;
+    stato("");
+  } catch {
+    if (mia !== richiesta) return;
+    dati = {};
+    stato("Impossibile caricare i turni: controlla la connessione e ricarica la pagina.", true);
+  }
+  disegna();
+}
+
+function disegna() {
+  $("titoloMese").textContent = new Date(anno, mese, 1).toLocaleDateString("it-IT", { month: "long", year: "numeric" });
+  const g = $("griglia");
+  g.innerHTML = "";
+  const primo = (new Date(anno, mese, 1).getDay() + 6) % 7; // lunedì = 0
+  const giorni = new Date(anno, mese + 1, 0).getDate();
+
+  for (let i = 0; i < primo; i++) {
+    const v = document.createElement("div");
+    v.className = "giorno vuoto";
+    g.append(v);
+  }
+
+  for (let d = 1; d <= giorni; d++) {
+    const iso = isoDi(d);
+    const dow = new Date(anno, mese, d).getDay();
+    const aperto = GIORNI_APERTI.includes(dow);
+    const passato = iso < oggiIso;
+
+    const cella = document.createElement("div");
+    cella.className = "giorno" + (aperto ? "" : " chiuso") + (passato ? " passato" : "") + (iso === oggiIso ? " oggi" : "");
+    cella.innerHTML = `<div class="data"><span class="gs">${GIORNI[dow]} </span>${d}</div>`;
+
+    if (aperto) {
+      for (const t of TURNI) {
+        const nomi = dati[`${iso}|${t.id}`] || [];
+        const mio = !!nome && nomi.some(n => stesso(n, nome));
+        const colore = nomi.length === 0 ? "var(--bad)" : nomi.length < t.posti ? "var(--warn)" : "var(--ok)";
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "turno" + (mio ? " mio" : "");
+        b.style.setProperty("--c", colore);
+        b.disabled = passato;
+        b.innerHTML =
+          `<span class="riga"><span>${esc(t.nome)}</span><span>${nomi.length}/${t.posti}</span></span>` +
+          `<span class="orario">${esc(t.orario)}</span>` +
+          `<span class="nomi">${nomi.length ? nomi.map(esc).join(", ") : "—"}</span>`;
+        b.onclick = () => cambia(iso, t);
+        cella.append(b);
+      }
+    }
+    g.append(cella);
+  }
+  disegnaMiei();
+}
+
+function disegnaMiei() {
+  const ul = $("miei");
+  if (!nome) { ul.innerHTML = "<li>Inserisci il tuo nome per vedere i tuoi turni.</li>"; return; }
+  const miei = Object.keys(dati).filter(k => dati[k].some(n => stesso(n, nome))).sort();
+  ul.innerHTML = miei.length
+    ? miei.map(k => {
+        const [iso, id] = k.split("|");
+        const t = TURNI.find(x => x.id === id);
+        return `<li>${formatta(iso)} – ${esc(t ? `${t.nome} (${t.orario})` : id)}</li>`;
+      }).join("")
+    : "<li>Nessun turno segnato questo mese.</li>";
+}
+
+async function cambia(iso, t) {
+  if (!nome && !(await chiediNome())) return;
+  const nomi = dati[`${iso}|${t.id}`] || [];
+  const mio = nomi.some(n => stesso(n, nome));
+
+  if (!mio && nomi.length >= t.posti) { alert("Questo turno è già al completo."); return; }
+  if (mio && !confirm(`Vuoi toglierti dal turno "${t.nome}" di ${formatta(iso)}?`)) return;
+
+  stato("Salvataggio…");
+  try {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ data: iso, turno: t.id, nome, azione: mio ? "rimuovi" : "aggiungi" }),
+    });
+    if (!r.ok) throw new Error(r.status);
+    const json = await r.json();
+    if (iso.startsWith(chiaveMese())) dati = json;
+    stato(mio ? "Turno rimosso." : "Turno segnato, grazie! 🙏", false, true);
+  } catch {
+    stato("Salvataggio non riuscito, riprova.", true);
+  }
+  disegna();
+}
+
+async function copiaScoperti() {
+  const titolo = $("titoloMese").textContent;
+  const giorni = new Date(anno, mese + 1, 0).getDate();
+  const righe = [];
+  for (let d = 1; d <= giorni; d++) {
+    const iso = isoDi(d);
+    if (iso < oggiIso || !GIORNI_APERTI.includes(new Date(anno, mese, d).getDay())) continue;
+    for (const t of TURNI) {
+      const n = (dati[`${iso}|${t.id}`] || []).length;
+      if (n < t.posti) righe.push(`• ${formatta(iso)} – ${t.nome}: ${t.posti - n === 1 ? "manca 1 persona" : `mancano ${t.posti - n} persone`}`);
+    }
+  }
+  const testo = righe.length
+    ? `📅 Turni ${titolo} – servono ancora volontari:\n${righe.join("\n")}\n\nSegnati qui 👉 ${location.origin}`
+    : `📅 Turni ${titolo}: tutti coperti, grazie a tutti! 🙏`;
+  try {
+    await navigator.clipboard.writeText(testo);
+    stato("Messaggio copiato: incollalo nel gruppo WhatsApp ✅", false, true);
+  } catch {
+    prompt("Copia questo testo:", testo);
+  }
+}
+
+function cambiaMese(delta) {
+  mese += delta;
+  if (mese < 0) { mese = 11; anno--; }
+  if (mese > 11) { mese = 0; anno++; }
+  dati = {};
+  disegna();
+  carica();
+}
+
+$("prec").onclick = () => cambiaMese(-1);
+$("succ").onclick = () => cambiaMese(1);
+$("utente").onclick = () => chiediNome();
+$("copia").onclick = copiaScoperti;
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") carica(); });
+
+aggiornaUtente();
+disegna();
+carica();
+if (!nome) chiediNome();
+</script>
+</body>
+</html>
